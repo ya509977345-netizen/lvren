@@ -35,7 +35,7 @@ export default function Footer() {
             </div>
             <div className="md:col-span-1">
               <Link href="http://beian.miit.gov.cn" target="_blank" className="hover:text-gray-900">
-                云ICP备18014318号-1
+                滇ICP备2025072685号-1
               </Link>
             </div>
             <div className="md:col-span-2">
@@ -51,7 +51,7 @@ export default function Footer() {
                   height={16}
                   className="mr-1"
                 />
-                云公网安备 36010902000181号
+                滇公网安备          号
               </Link>
             </div>
           </div>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function Hero() {
   return (
     <div
-      className="relative h-screen flex items-center justify-center bg-cover bg-center pt-16"
+      className="relative h-screen flex items-center justify-center bg-cover bg-center pt-2"
       style={{
         backgroundImage: 'url(/background.svg)',
         height: '720px'
@@ -16,16 +16,24 @@ export default function Hero() {
       <div className="container mx-auto px-4 relative z-10 text-center">
         <div className="carousel-centered">
           <div className="mb-10">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">律刃案件管理系统</h1>
+            {/* 律刃图片 */}
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/律刃.png" 
+                alt="律刃" 
+                className="h-60 md:h-60"
+              />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">律师案件管理系统</h1>
             <p className="text-white text-lg mb-2">简化办案、释放你的大量时间</p>
           
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             <Link
-              href="http://www.bookxnote.com/setup/bookxnotepro-windows-x86-3.0.0.2013-20250331.zip"
+              href="#"
               className="download-button inline-block bg-transparent hover:bg-white hover:text-gray-900 text-white border border-white px-12 py-4 rounded text-lg uppercase font-medium"
             >
-              Win32/64位下载
+              立即下载
             </Link>          
           </div>
 

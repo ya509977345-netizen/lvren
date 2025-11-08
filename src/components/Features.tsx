@@ -40,9 +40,9 @@ export default function Features() {
                 <Image
                   src={feature.image}
                   alt={feature.title}
-                  width={400}
-                  height={300}
-                  className="w-full h-auto max-h-60 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  width={feature.image === '/AI助理.png' ? 200 : 400}
+                  height={feature.image === '/AI助理.png' ? 150 : 300}
+                  className={`${feature.image === '/AI助理.png' ? 'w-1/2' : 'w-full'} h-auto max-h-60 rounded-lg shadow-md hover:shadow-lg transition-shadow mx-auto`}
                 />
               </div>
             </div>

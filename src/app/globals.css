@@ -30,9 +30,9 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* BookxNote specific colors */
-    --bookxnote-teal: 181 65% 44%;
-    --bookxnote-dark: 222 10% 26%;
+    /* 律刃 specific colors */
+    --lvren-teal: 181 65% 44%;
+    --lvren-dark: 222 10% 26%;
   }
 
   .dark {
@@ -72,7 +72,7 @@
   }
 }
 
-/* BookxNote specific styles */
+/* 律刃 specific styles */
 .header {
   background-color: rgba(255, 255, 255, 0.98);
 }
@@ -82,7 +82,7 @@ main {
   padding-top: 64px;
 }
 
-/* Style the accordion to match the BookxNote website */
+/* Style the accordion to match the 律刃 website */
 .accordion-trigger {
   font-weight: 500;
 }
