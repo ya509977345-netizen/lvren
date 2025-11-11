@@ -1,6 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import Image from 'next/image';
 
 export default function Features() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -37,11 +36,9 @@ export default function Features() {
                 className="mt-auto cursor-pointer" 
                 onClick={() => setSelectedImage(feature.image)}
               >
-                <Image
+                <img
                   src={feature.image}
                   alt={feature.title}
-                  width={feature.image === '/AI助理.png' ? 200 : 400}
-                  height={feature.image === '/AI助理.png' ? 150 : 300}
                   className={`${feature.image === '/AI助理.png' ? 'w-1/2' : 'w-full'} h-auto max-h-60 rounded-lg shadow-md hover:shadow-lg transition-shadow mx-auto`}
                 />
               </div>
@@ -56,11 +53,9 @@ export default function Features() {
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl w-full max-h-[90vh]">
-            <Image
+            <img
               src={selectedImage}
               alt="放大预览"
-              width={1200}
-              height={900}
               className="w-full h-auto rounded-lg"
             />
           </div>

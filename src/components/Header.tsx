@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Header() {
@@ -32,11 +31,9 @@ export default function Header() {
             {/* Logo - 大幅缩小尺寸避免遮挡 */}
             <div className="logo max-w-[60px] flex-shrink-0">
               <Link href="/" className="logo-wrap inline-block">
-                <Image
+                <img
                   src="/律刃.png"
                   alt="律刃 Logo"
-                  width={60}
-                  height={15}
                   className="logo-img logo-img-active w-full h-auto"
                 />
               </Link>

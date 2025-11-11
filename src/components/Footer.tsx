@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import BackToTop from './BackToTop';
 
 export default function Footer() {
@@ -44,12 +43,10 @@ export default function Footer() {
                 target="_blank"
                 className="hover:text-gray-900 flex items-center"
               >
-                <Image
+                <img
                   src="/律刃.png"
                   alt="律刃图标"
-                  width={16}
-                  height={16}
-                  className="mr-1"
+                  className="w-4 h-4 mr-1"
                 />
                 滇公网安备          号
               </Link>
