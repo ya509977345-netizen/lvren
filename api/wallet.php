@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'rate_limiter.php';
 
 class WalletAPI {
     private $db;
@@ -11,21 +12,63 @@ class WalletAPI {
     
     // 获取用户余额
     public function getBalance() {
+        // 调试：记录请求信息
+        $headers = getallheaders();
+        error_log("Wallet getBalance: Request Headers = " . json_encode($headers));
+        
         $userId = $this->authenticate();
         if (!$userId) return;
         
+        // 调试：记录实际获取的用户ID
+        error_log("Wallet getBalance: authenticated userId = " . $userId);
+        
+        // 应用速率限制
+        if (!RateLimiter::checkLimit($userId, 'wallet')) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'message' => '请求过于频繁，请稍后再试']);
+            return;
+        }
+        
+        // 发送速率限制响应头
+        RateLimiter::sendRateLimitHeaders($userId, 'wallet');
+        
         try {
-            $stmt = $this->db->prepare("SELECT balance FROM users WHERE id = ?");
-            $stmt->execute([$userId]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            // 先查询用户是否存在，记录详细信息
+            $checkStmt = $this->db->prepare("SELECT id, username, balance FROM users WHERE id = ?");
+            $checkStmt->execute([$userId]);
+            $user = $checkStmt->fetch(PDO::FETCH_ASSOC);
             
-            echo json_encode([
+            if (!$user) {
+                error_log("Wallet getBalance: User not found with id = $userId");
+                echo json_encode(['success' => false, 'message' => '用户不存在']);
+                return;
+            }
+            
+            error_log("Wallet getBalance: Found user - id={$user['id']}, username={$user['username']}, balance={$user['balance']}");
+            
+            // 使用json_encode确保格式正确
+            $balance = (float)$user['balance'];
+            $debugInfo = "userId=$userId, balance=$balance, rawBalance=" . $user['balance'];
+            error_log("Wallet getBalance DEBUG: $debugInfo");
+            
+            // 先构建数组，然后编码
+            $responseData = [
                 'success' => true,
-                'balance' => $result['balance'],
-                'message' => '余额查询成功'
-            ]);
+                'balance' => number_format($balance, 2, '.', ''),
+                'message' => '余额查询成功',
+                'debug_user_id' => $userId,  // 临时添加调试信息
+                'debug_balance' => $balance   // 临时添加调试信息
+            ];
+            
+            error_log("Response array: " . print_r($responseData, true));
+            
+            $jsonString = json_encode($responseData);
+            error_log("JSON string before output: " . $jsonString);
+            
+            echo $jsonString;
             
         } catch (PDOException $e) {
+            error_log("Wallet getBalance PDOException: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => '服务器错误: ' . $e->getMessage()]);
         }
@@ -36,15 +79,33 @@ class WalletAPI {
         $userId = $this->authenticate();
         if (!$userId) return;
         
-        $input = json_decode(file_get_contents('php://input'), true);
-        $amount = isset($input['amount']) ? floatval($input['amount']) : 0;
-        $paymentMethod = isset($input['payment_method']) ? sanitizeInput($input['payment_method']) : 'unknown';
-        
-        if ($amount <= 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => '充值金额必须大于0']);
+        // 应用速率限制
+        if (!RateLimiter::checkLimit($userId, 'wallet')) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'message' => '请求过于频繁，请稍后再试']);
             return;
         }
+        
+        // 发送速率限制响应头
+        RateLimiter::sendRateLimitHeaders($userId, 'wallet');
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        // 使用增强输入验证
+        $validationRules = [
+            'amount' => ['required', 'number', 'min' => 0.01, 'max' => 10000],
+            'payment_method' => ['required', 'string', 'maxLength' => 50]
+        ];
+        
+        $validationErrors = validateInput($input, $validationRules);
+        if (!empty($validationErrors)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => '输入验证失败', 'errors' => $validationErrors]);
+            return;
+        }
+        
+        $amount = floatval($input['amount']);
+        $paymentMethod = sanitizeInput($input['payment_method']);
         
         try {
             // 开始事务
@@ -178,6 +239,7 @@ class WalletAPI {
     // 认证函数
     private function authenticate() {
         $token = getBearerToken();
+        error_log("Wallet authenticate: received token = " . substr($token, 0, 30) . "...");
         
         if (!$token) {
             http_response_code(401);
@@ -186,6 +248,7 @@ class WalletAPI {
         }
         
         $userId = verifyToken($token);
+        error_log("Wallet authenticate: decoded userId = " . $userId);
         
         if (!$userId) {
             http_response_code(401);

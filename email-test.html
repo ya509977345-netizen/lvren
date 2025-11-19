@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件发送测试 - 软件授权系统</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-left: 4px solid #007cba;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .status-success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .status-warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .status-error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #007cba;
+        }
+        
+        .btn {
+            background: #007cba;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            background: #005a87;
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007cba;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>邮件发送测试</h1>
+            <p>测试和配置邮件发送功能</p>
+        </div>
+        
+        <div class="content">
+            <div id="statusInfo"></div>
+            
+            <div id="testSection">
+                <h3>发送测试邮件</h3>
+                <form id="testForm">
+                    <div class="form-group">
+                        <label for="testEmail">测试邮箱地址:</label>
+                        <input type="email" id="testEmail" placeholder="输入您的邮箱地址" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="testMessage">测试内容:</label>
+                        <textarea id="testMessage" rows="4" placeholder="可选，自定义测试内容">这是一封测试邮件，用于验证邮件发送功能是否正常工作。</textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" id="sendBtn">发送测试邮件</button>
+                </form>
+            </div>
+            
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>正在发送邮件...</p>
+            </div>
+            
+            <div id="result"></div>
+            
+            <div class="status-card">
+                <h4>配置说明</h4>
+                <p>如果邮件发送失败，请检查以下配置：</p>
+                
+                <h5>1. 服务器邮件服务</h5>
+                <div class="code-block">
+# CentOS/RHEL
+sudo yum install sendmail
+sudo systemctl start sendmail
+sudo systemctl enable sendmail
+
+# Ubuntu/Debian  
+sudo apt-get install sendmail
+sudo systemctl start sendmail
+sudo systemctl enable sendmail
+                </div>
+                
+                <h5>2. PHP配置 (php.ini)</h5>
+                <div class="code-block">
+[mail function]
+SMTP = smtp.example.com
+smtp_port = 587
+sendmail_from = noreply@example.com
+sendmail_path = /usr/sbin/sendmail -t -i
+                </div>
+                
+                <h5>3. 替代方案 - 使用第三方邮件服务</h5>
+                <p>您也可以考虑使用以下服务来发送邮件：</p>
+                <ul>
+                    <li><strong>SendGrid</strong> - 免费100封/天</li>
+                    <li><strong>Mailgun</strong> - 免费1000封/月</li>
+                    <li><strong>AWS SES</strong> - 低成本，高可靠性</li>
+                    <li><strong>阿里云邮件推送</strong> - 国内用户友好</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://lvren.cc/api/';
+        
+        // 页面加载时检查邮件状态
+        window.addEventListener('DOMContentLoaded', function() {
+            checkMailStatus();
+        });
+        
+        // 表单提交处理
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('testEmail').value;
+            const message = document.getElementById('testMessage').value;
+            
+            sendTestEmail(email, message);
+        });
+        
+        function checkMailStatus() {
+            showLoading(true);
+            
+            fetch(API_BASE_URL + 'email_status.php', {
+                method: 'GET',
+                headers: {
+                    'X-API-Key': 'Wang869678'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                displayMailStatus(data);
+            })
+            .catch(error => {
+                showLoading(false);
+                showStatus('无法获取邮件状态信息', 'error');
+                console.error('Error:', error);
+            });
+        }
+        
+        function sendTestEmail(email, message) {
+            showLoading(true);
+            
+            const data = {
+                to: email,
+                subject: '邮件发送测试',
+                message: message || '这是一封测试邮件，用于验证邮件发送功能是否正常工作。'
+            };
+            
+            fetch(API_BASE_URL + 'email_test.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'Wang869678'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                displayTestResult(data);
+            })
+            .catch(error => {
+                showLoading(false);
+                showStatus('邮件发送失败：网络错误', 'error');
+                console.error('Error:', error);
+            });
+        }
+        
+        function displayMailStatus(status) {
+            const statusDiv = document.getElementById('statusInfo');
+            
+            let statusClass = 'status-success';
+            let statusHtml = `
+                <h3>邮件发送状态</h3>
+                <div class="status-card status-${statusClass}">
+            `;
+            
+            if (status.available) {
+                statusHtml += `
+                    <h4>✅ 邮件发送功能可用</h4>
+                    <p><strong>发送方式:</strong> ${status.method || 'PHP mail()'}</p>
+                    <p>${status.message}</p>
+                `;
+                
+                if (status.config) {
+                    statusHtml += `
+                        <h5>SMTP配置:</h5>
+                        <ul>
+                            <li>服务器: ${status.config.host}</li>
+                            <li>端口: ${status.config.port}</li>
+                            <li>加密: ${status.config.encryption}</li>
+                        </ul>
+                    `;
+                }
+            } else {
+                statusClass = 'status-error';
+                statusHtml += `
+                    <h4>❌ 邮件发送功能不可用</h4>
+                    <p>${status.message}</p>
+                    <p><strong>解决方案:</strong> ${status.solution}</p>
+                `;
+            }
+            
+            statusHtml += '</div>';
+            statusDiv.innerHTML = statusHtml;
+        }
+        
+        function displayTestResult(result) {
+            const resultDiv = document.getElementById('result');
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="message success">
+                        <h4>✅ 测试邮件发送成功！</h4>
+                        <p>请检查您的邮箱收件箱（包括垃圾邮件文件夹）。</p>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="message error">
+                        <h4>❌ 测试邮件发送失败</h4>
+                        <p><strong>错误信息:</strong> ${result.message}</p>
+                        <p>请检查服务器配置或联系系统管理员。</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('result');
+            statusDiv.innerHTML = `
+                <div class="message ${type}">
+                    ${message}
+                </div>
+            `;
+        }
+        
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const testSection = document.getElementById('testSection');
+            
+            if (show) {
+                loading.style.display = 'block';
+                testSection.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                testSection.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

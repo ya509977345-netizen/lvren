@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'rate_limiter.php';
 
 class LicenseAPI {
     private $db;
@@ -14,9 +15,20 @@ class LicenseAPI {
         $userId = $this->authenticate();
         if (!$userId) return;
         
+        // 应用速率限制
+        if (!RateLimiter::checkLimit($userId, 'license')) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'message' => '请求过于频繁，请稍后再试']);
+            return;
+        }
+        
+        // 发送速率限制响应头
+        RateLimiter::sendRateLimitHeaders($userId, 'license');
+        
         $softwareId = isset($_GET['software_id']) ? sanitizeInput($_GET['software_id']) : '';
         
         if (empty($softwareId)) {
+            logApiAccess($userId, 'check_license', "软件ID为空", false);
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => '软件ID不能为空']);
             return;

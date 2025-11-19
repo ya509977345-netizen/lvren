@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>邮件队列查看器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .content {
+            padding: 20px 30px;
+        }
+        
+        .email-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .email-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .email-meta {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .email-content {
+            padding: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .email-content.collapsed {
+            max-height: 100px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007cba;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #005a87;
+        }
+        
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 邮件队列查看器</h1>
+            <button class="btn btn-primary" onclick="refreshQueue()">刷新</button>
+        </div>
+        
+        <div class="content">
+            <div class="alert alert-info">
+                <strong>说明：</strong> 此页面显示由于邮件服务不可用而保存到文件的邮件。您可以手动查看这些邮件内容。
+            </div>
+            
+            <div id="loading">
+                <div>正在加载邮件队列...</div>
+            </div>
+            
+            <div id="queue-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://lvren.cc/api/';
+        
+        // 页面加载时获取邮件队列
+        window.addEventListener('DOMContentLoaded', function() {
+            loadEmailQueue();
+        });
+        
+        function loadEmailQueue() {
+            showLoading(true);
+            
+            fetch(API_BASE_URL + 'email_queue_viewer.php', {
+                method: 'GET',
+                headers: {
+                    'X-API-Key': 'Wang869678'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                displayEmailQueue(data);
+            })
+            .catch(error => {
+                showLoading(false);
+                showError('加载邮件队列失败: ' + error.message);
+                console.error('Error:', error);
+            });
+        }
+        
+        function displayEmailQueue(data) {
+            const container = document.getElementById('queue-container');
+            
+            if (!data.success) {
+                showError(data.message || '获取邮件队列失败');
+                return;
+            }
+            
+            if (data.count === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>📭 邮件队列为空</h3>
+                        <p>目前没有等待发送的邮件</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="alert alert-warning">
+                    <strong>发现 ${data.count} 封邮件</strong> 
+                    这些邮件因为邮件服务不可用而保存到文件中
+                </div>
+            `;
+            
+            data.emails.forEach(email => {
+                const parsedEmail = parseEmailContent(email.content);
+                
+                html += `
+                    <div class="email-item">
+                        <div class="email-header">
+                            <div>
+                                <div><strong>收件人:</strong> ${parsedEmail.to || '未知'}</div>
+                                <div><strong>主题:</strong> ${parsedEmail.subject || '无主题'}</div>
+                                <div class="email-meta">文件名: ${email.file} | ${email.date}</div>
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="toggleContent(this)">
+                                展开/收起
+                            </button>
+                        </div>
+                        <div class="email-content collapsed">
+                            ${parsedEmail.body || email.content}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function parseEmailContent(content) {
+            const lines = content.split('\n');
+            const parsed = {
+                to: '',
+                subject: '',
+                body: ''
+            };
+            
+            let inBody = false;
+            for (const line of lines) {
+                if (line.startsWith('To: ')) {
+                    parsed.to = line.substring(4);
+                } else if (line.startsWith('Subject: ')) {
+                    parsed.subject = line.substring(9);
+                } else if (line.trim() === '' && !inBody) {
+                    inBody = true;
+                } else if (inBody) {
+                    parsed.body += line + '\n';
+                }
+            }
+            
+            return parsed;
+        }
+        
+        function toggleContent(button) {
+            const emailItem = button.closest('.email-item');
+            const content = emailItem.querySelector('.email-content');
+            content.classList.toggle('collapsed');
+        }
+        
+        function refreshQueue() {
+            loadEmailQueue();
+        }
+        
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('queue-container');
+            
+            if (show) {
+                loading.style.display = 'block';
+                container.innerHTML = '';
+            } else {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('queue-container');
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <strong>错误:</strong> ${message}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
